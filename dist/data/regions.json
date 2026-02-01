@@ -1,0 +1,24 @@
+{
+  "regions": [
+    {
+      "id": "attic",
+      "displayName": "Attic",
+      "bounds": { "minX": -8, "maxX": 8, "minZ": -8, "maxZ": 8 },
+      "connections": ["nerima_outdoor"],
+      "type": "interior",
+      "spawn": { "x": 0, "y": 0, "z": 0 }
+    },
+    {
+      "id": "nerima_outdoor",
+      "displayName": "Nerima",
+      "bounds": { "minX": -80, "maxX": 80, "minZ": -80, "maxZ": 80 },
+      "connections": ["attic"],
+      "type": "earth",
+      "spawn": { "x": 0, "y": 0, "z": 0 }
+    }
+  ],
+  "locations": [
+    { "id": "attic_diary", "regionId": "attic", "position": { "x": 2, "y": 0.5, "z": -2 }, "displayName": "Old diary", "landmarkType": "interact" },
+    { "id": "nerima_center", "regionId": "nerima_outdoor", "position": { "x": 0, "y": 0, "z": 0 }, "displayName": "Nerima center", "landmarkType": "landmark" }
+  ]
+}

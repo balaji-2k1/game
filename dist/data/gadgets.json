@@ -1,0 +1,17 @@
+{
+  "gadgets": [
+    {
+      "id": "take_copter",
+      "displayName": "Take-copter",
+      "category": "traversal",
+      "cooldownSeconds": 0,
+      "energyCostPerSecond": 8,
+      "maxEnergy": 100,
+      "unlockCondition": "first_flight_unlocked",
+      "key": "KeyF",
+      "description": "Fly freely. Uses Doraemon's battery."
+    }
+  ],
+  "doraemonBatteryMax": 100,
+  "batteryRechargePerSecond": 5
+}

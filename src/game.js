@@ -181,9 +181,10 @@ export function createDoraemon(scene) {
   head.castShadow = true;
   root.add(head);
 
-  const faceGeom = new THREE.SphereGeometry(0.5, 24, 24, -Math.PI / 2, Math.PI, 0, Math.PI);
+  // Use a full sphere for the face, slightly in front of the head
+  const faceGeom = new THREE.SphereGeometry(0.5, 32, 32);
   const face = new THREE.Mesh(faceGeom, createMaterial(FACE_WHITE, { roughness: 0.6 }));
-  face.position.set(0, 1.1, 0.05);
+  face.position.set(0, 1.1, 0.18);
   root.add(face);
 
   const nose = new THREE.Mesh(
@@ -193,18 +194,28 @@ export function createDoraemon(scene) {
   nose.position.set(0, 1.08, 0.55);
   root.add(nose);
 
-  const eyeGeom = new THREE.SphereGeometry(0.11, 12, 12);
-  const eyeL = new THREE.Mesh(eyeGeom, createMaterial(BLACK));
-  eyeL.position.set(-0.2, 1.22, 0.45);
+  // Doraemon's eyes: white spheres with black pupils
+  const eyeWhiteGeom = new THREE.SphereGeometry(0.11, 16, 16);
+  const eyeL = new THREE.Mesh(eyeWhiteGeom, createMaterial(0xffffff));
+  eyeL.position.set(-0.13, 1.22, 0.52);
   root.add(eyeL);
-  const eyeR = new THREE.Mesh(eyeGeom, createMaterial(BLACK));
-  eyeR.position.set(0.2, 1.22, 0.45);
+  const eyeR = new THREE.Mesh(eyeWhiteGeom, createMaterial(0xffffff));
+  eyeR.position.set(0.13, 1.22, 0.52);
   root.add(eyeR);
-  const hl = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), createMaterial(0xffffff));
-  hl.position.set(-0.22, 1.26, 0.5);
+  // Pupils
+  const pupilGeom = new THREE.SphereGeometry(0.045, 12, 12);
+  const pupilL = new THREE.Mesh(pupilGeom, createMaterial(BLACK));
+  pupilL.position.set(-0.13, 1.21, 0.62);
+  root.add(pupilL);
+  const pupilR = new THREE.Mesh(pupilGeom, createMaterial(BLACK));
+  pupilR.position.set(0.13, 1.21, 0.62);
+  root.add(pupilR);
+  // Eye highlights
+  const hl = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), createMaterial(0xffffff));
+  hl.position.set(-0.15, 1.25, 0.62);
   root.add(hl);
-  const hr = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), createMaterial(0xffffff));
-  hr.position.set(0.18, 1.26, 0.5);
+  const hr = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), createMaterial(0xffffff));
+  hr.position.set(0.11, 1.25, 0.62);
   root.add(hr);
 
   const whiskerMat = new THREE.LineBasicMaterial({ color: 0x333333 });

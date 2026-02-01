@@ -211,8 +211,9 @@ function update(dt) {
     const allowKeys = document.activeElement?.tagName !== 'INPUT';
     if (allowKeys && (keyState.KeyW || keyState.w)) moveDir.sub(forward);
     if (allowKeys && (keyState.KeyS || keyState.s)) moveDir.add(forward);
-    if (allowKeys && (keyState.KeyA || keyState.a)) moveDir.sub(right);
-    if (allowKeys && (keyState.KeyD || keyState.d)) moveDir.add(right);
+  // Fix left/right logic: A adds left, D adds right
+  if (allowKeys && (keyState.KeyA || keyState.a)) moveDir.add(right.clone().negate());
+  if (allowKeys && (keyState.KeyD || keyState.d)) moveDir.add(right);
   }
 
   const flying = (keyState.KeyF || keyState.f) && canUseTakeCopter() && isIntroDone();

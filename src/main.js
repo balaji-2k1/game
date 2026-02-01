@@ -1,9 +1,11 @@
+/**
+ * Entry point: init, game loop, input, UI.
+ * Consolidated: uses game.js (player, camera, Doraemon), world.js, systems.js; UI inlined.
+ */
 import * as THREE from 'three';
-import { Player } from './player.js';
-import { ThirdPersonCamera } from './camera.js';
+import { Player, ThirdPersonCamera, createDoraemon } from './game.js';
 import {
   loadRegionData,
-  getRegion,
   getSpawn,
   buildAttic,
   buildNerimaOutdoor,
@@ -16,29 +18,54 @@ import {
   useTakeCopter,
   rechargeBattery,
   getBatteryPercent,
-  getTakeCopterConfig,
-} from './gadgets.js';
-import {
-  getIntroPhase,
-  getIntroLine,
   advanceIntro,
+  getIntroLine,
   startIntro,
   isIntroDone,
   setCurrentRegionId,
-  getCurrentRegionId,
   shouldTransitionToOutdoor,
-} from './story.js';
-import {
-  showDialogue,
-  hideDialogue,
-  isDialogueVisible,
-  setEnergyPercent,
-  hideTitleScreen,
-  onStartClick,
-  setControlsHint,
-} from './ui.js';
-import { createDoraemon } from './doraemon.js';
+} from './systems.js';
 
+// --- UI refs and helpers (camelCase) ---
+const dialogueBox = document.getElementById('dialogue-box');
+const dialogueText = document.getElementById('dialogue-text');
+const energyFill = document.getElementById('energy-fill');
+const titleScreen = document.getElementById('title-screen');
+const startBtn = document.getElementById('start-btn');
+const controlsHint = document.getElementById('controls-hint');
+
+function showDialogue(text) {
+  if (dialogueBox && dialogueText) {
+    dialogueBox.classList.remove('hidden');
+    dialogueText.textContent = text;
+  }
+}
+
+function hideDialogue() {
+  if (dialogueBox) dialogueBox.classList.add('hidden');
+}
+
+function isDialogueVisible() {
+  return dialogueBox && !dialogueBox.classList.contains('hidden');
+}
+
+function setEnergyPercent(percent) {
+  if (energyFill) energyFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+}
+
+function hideTitleScreen() {
+  if (titleScreen) titleScreen.classList.add('hidden');
+}
+
+function onStartClick(callback) {
+  if (startBtn) startBtn.addEventListener('click', callback);
+}
+
+function setControlsHint(text) {
+  if (controlsHint) controlsHint.textContent = text;
+}
+
+// --- Game state ---
 let scene, camera, renderer, clock;
 let player, tpsCamera, doraemon;
 let currentRegionId = 'attic';
@@ -85,9 +112,10 @@ async function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   clock = new THREE.Clock();
-  player = new Player(scene);
-  tpsCamera = new ThirdPersonCamera(camera, player.mesh);
   doraemon = createDoraemon(scene);
+  doraemon.setVisible(true);
+  player = new Player(scene, doraemon.mesh);
+  tpsCamera = new ThirdPersonCamera(camera, player.mesh);
 
   await loadRegionData();
   await loadGadgetData();
@@ -159,8 +187,6 @@ function onKeyDown(e) {
           const spawn = getSpawn('nerima_outdoor');
           player.position.set(spawn.x, spawn.y, spawn.z);
           player.stopFlying();
-          doraemon.setVisible(true);
-          doraemon.setPosition(player.position.x + 2, 0, player.position.z);
         }
       }
     }
@@ -179,26 +205,26 @@ function update(dt) {
 
   const forward = tpsCamera.getForward();
   const right = tpsCamera.getRight();
-  let moveForward = new THREE.Vector3(0, 0, 0);
-  let moveRight = new THREE.Vector3(0, 0, 0);
+  let moveDir = new THREE.Vector3(0, 0, 0);
   if (pointerLocked) {
     if (document.querySelector('#ui input:focus')) return;
-    const w = document.activeElement?.tagName === 'INPUT' ? false : true;
-    if (w && (keyState.KeyW || keyState.w)) moveForward.add(forward);
-    if (keyState.KeyS || keyState.s) moveForward.sub(forward);
-    if (keyState.KeyA || keyState.a) moveRight.sub(right);
-    if (keyState.KeyD || keyState.d) moveRight.add(right);
+    const allowKeys = document.activeElement?.tagName !== 'INPUT';
+    if (allowKeys && (keyState.KeyW || keyState.w)) moveDir.sub(forward);
+    if (allowKeys && (keyState.KeyS || keyState.s)) moveDir.add(forward);
+    if (allowKeys && (keyState.KeyA || keyState.a)) moveDir.sub(right);
+    if (allowKeys && (keyState.KeyD || keyState.d)) moveDir.add(right);
   }
 
   const flying = (keyState.KeyF || keyState.f) && canUseTakeCopter() && isIntroDone();
   if (flying) {
     const up = keyState.Space;
     const down = keyState.ShiftLeft || keyState.ShiftRight;
-    player.fly(moveForward, moveRight, up ? true : down ? false : null, dt);
+    if (moveDir.lengthSq() > 0) moveDir.normalize();
+    player.fly(moveDir, new THREE.Vector3(0, 0, 0), up ? true : down ? false : null, dt);
     const stillFlying = useTakeCopter(dt);
     if (!stillFlying) player.stopFlying();
   } else {
-    player.move(moveForward, moveRight, dt, camera);
+    if (moveDir.lengthSq() > 0) player.move(moveDir, new THREE.Vector3(0, 0, 0), dt);
     if (keyState.Space && !player.isFlying) player.jump();
     rechargeBattery(dt);
   }
@@ -206,17 +232,11 @@ function update(dt) {
   const groundY = getCurrentGroundY(currentRegionId);
   player.update(dt, groundY);
 
-  if (moveForward.lengthSq() > 0 || moveRight.lengthSq() > 0) {
-    const dir = new THREE.Vector3().addVectors(moveForward, moveRight).normalize();
-    player.faceDirection(dir);
+  if (moveDir.lengthSq() > 0) {
+    player.faceDirection(moveDir.clone().normalize());
   }
 
   tpsCamera.update(dt);
-
-  if (doraemon && doraemon.mesh.visible) {
-    doraemon.lookAt(player.position.x, player.position.y, player.position.z);
-  }
-
   setEnergyPercent(getBatteryPercent());
 }
 
